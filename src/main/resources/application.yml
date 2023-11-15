@@ -1,0 +1,23 @@
+---
+spring:
+  datasource:
+    hikari:
+      minimum-idle: 0
+      maximum-pool-size: 10
+      connection-timeout: 60000
+      max-lifetime: 120000
+      idle-timeout: 90000
+      connection-test-query: "SELECT version()"
+    url: jdbc:postgresql://localhost:5432/postgres
+    driver-class-name: org.postgresql.Driver
+    username: postgres
+    password: changeit
+  sql:
+    init:
+      mode: always
+  jackson:
+    serialization:
+      FAIL_ON_EMPTY_BEANS: false
+  jpa:
+    hibernate:
+      ddl-auto = validate

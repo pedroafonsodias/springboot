@@ -1,0 +1,72 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    environment:
+      - SPRING_PROFILES_ACTIVE=local
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/TEST
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=changeit
+      - CLOUD_AWS_S3_ENDPOINT=http://localstack:4566
+      - CLOUD_AWS_SQS_ENDPOINT=http://localstack:4566
+      - CLOUD_AWS_SNS_ENDPOINT=http://localstack:4566
+      - CLOUD_AWS_DYNAMODB_ENDPOINT=http://localstack:4566
+      - CLOUD_AWS_LAMBDA_ENDPOINT=http://localstack:4566
+      - CLOUD_AWS_MAIL_ENDPOINT=http://localstack:4566
+      - CLOUD_AWS_CREDENTIALS_SECRET_KEY=accesskey # Spring Cloud AWS uses SDK V1
+      - CLOUD_AWS_CREDENTIALS_SECRET_KEY=secretkey
+      - AWS_REGION=eu-west-1 # We use AWS SDK V2 which is detached from Spring Cloud AWS
+      - AWS_ACCESS_KEY_ID=accessKey
+      - AWS_SECRET_ACCESS_KEY=secretkey
+    ports:
+      - 8080:8080
+    links:
+      - postgres
+      - localstack
+    depends_on:
+      postgres:
+          condition: service_healthy
+    restart: always
+  postgres:
+    image: postgres:11-alpine
+    environment:
+      # Default username: postgres
+      - POSTGRES_DB=TEST
+      - POSTGRES_PASSWORD=changeit
+      - POSTGRES_HOST_AUTH_METHOD=trust
+    volumes:
+      - ./db.sql:/docker-entrypoint-initdb/db.sql
+      - ./postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    ports:
+      - 5432:5432
+  pgadmin:
+    # PG_ADMIN uses UserAgent LocalStorage for configuration
+    image: dpage/pgadmin4
+    ports:
+      - 8081:80
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=foo@bar.baz
+      - PGADMIN_DEFAULT_PASSWORD=changeit
+    links:
+      - postgres
+  localstack:
+    image: localstack/localstack:1.1.0
+    environment:
+      - SERVICES=dynamodb,sqs,s3,sns,ses,lambda
+      - DEFAULT_REGION=eu-west-1
+  dynamodb-admin:
+    image: aaronshaf/dynamodb-admin
+    ports:
+      - 8082:8001
+    links:
+      - localstack
+    environment:
+      - DYNAMO_ENDPOINT=http://localstack:4566
+      - AWS_ACCESS_KEY_ID=accessKey
+      - AWS_SECRET_ACCESS_KEY=secretkey
