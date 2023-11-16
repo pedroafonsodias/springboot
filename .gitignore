@@ -5,7 +5,7 @@ build/
 !**/src/main/**/build/
 !**/src/test/**/build/
 
-db.sql
+db.sql/
 zscaler.pem
 postgres-data
 
